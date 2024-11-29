@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Tax Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        form {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            max-width: 400px;
+            margin: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Car Tax Calculator</h2>
+<form id="taxForm">
+    <label for="year">Year of Manufacture (YOM):</label>
+    <select id="year" name="year"></select>
+
+    <label for="month">Month of Manufacture:</label>
+    <select id="month" name="month">
+        <option value="January">January</option>
+        <option value="February">February</option>
+        <option value="March">March</option>
+        <option value="April">April</option>
+        <option value="May">May</option>
+        <option value="June">June</option>
+        <option value="July">July</option>
+        <option value="August">August</option>
+        <option value="September">September</option>
+        <option value="October">October</option>
+        <option value="November">November</option>
+        <option value="December">December</option>
+    </select>
+
+    <label for="engineCapacity">Engine Capacity (CC):</label>
+    <input type="number" id="engineCapacity" name="engineCapacity" placeholder="Enter Engine Capacity (e.g., 1500)" required>
+
+    <label for="crsp">CRSP:</label>
+    <input type="number" id="crsp" name="crsp" placeholder="Enter CRSP" required>
+
+    <label for="invoiceValue">Invoice Value:</label>
+    <input type="number" id="invoiceValue" name="invoiceValue" placeholder="Enter Invoice Value" required>
+
+    <button type="button" onclick="calculatePrice()">Calculate</button>
+</form>
+
+<div id="result" class="result" style="display: none;">
+    <h3>Calculation Results</h3>
+    <p><strong>Age of Vehicle:</strong> <span id="vehicleAge"></span> years</p>
+    <p><strong>Depreciation:</strong> <span id="depreciation"></span>%</p>
+    <p><strong>Custom Value:</strong> KSH <span id="customValue"></span></p>
+    <p><strong>Import Duty:</strong> KSH <span id="importDuty"></span></p>
+    <p><strong>Excise Duty:</strong> KSH <span id="exciseDuty"></span></p>
+    <p><strong>VAT:</strong> KSH <span id="vat"></span></p>
+    <p><strong>RDL:</strong> KSH <span id="rdl"></span></p>
+    <p><strong>IDF:</strong> KSH <span id="idf"></span></p>
+    <p><strong>Total Tax:</strong> KSH <span id="totalTax"></span></p>
+    <p><strong>Total Value (Incl. Tax):</strong> KSH <span id="totalValue"></span></p>
+</div>
+
+<script>
+    // Populate Year Dropdown with the last 8 years
+    const yearDropdown = document.getElementById('year');
+    const currentYear = new Date().getFullYear();
+    for (let i = 0; i < 8; i++) {
+        const year = currentYear - i;
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearDropdown.appendChild(option);
+    }
+
+    // Function to calculate and display the results
+    function calculatePrice() {
+        const invoiceValue = parseFloat(document.getElementById('invoiceValue').value) || 0;
+        const crsp = parseFloat(document.getElementById('crsp').value) || 0;
+        const engineCapacity = parseFloat(document.getElementById('engineCapacity').value) || 0;
+        const yearOfManufacture = parseInt(document.getElementById('year').value) || currentYear;
+        const monthOfManufacture = document.getElementById('month').value;
+
+        // Calculate the vehicle's age
+        const monthIndex = new Date(`${monthOfManufacture} 1, ${yearOfManufacture}`).getMonth() + 1;
+        const vehicleDate = new Date(yearOfManufacture, monthIndex - 1);
+        const currentDate = new Date();
+        const vehicleAge = (currentDate - vehicleDate) / (1000 * 60 * 60 * 24 * 365);
+
+        // Determine depreciation
+        let depreciationRate;
+        if (vehicleAge <= 0.5) depreciationRate = 5;
+        else if (vehicleAge <= 1) depreciationRate = 10;
+        else if (vehicleAge <= 2) depreciationRate = 15;
+        else if (vehicleAge <= 3) depreciationRate = 20;
+        else if (vehicleAge <= 4) depreciationRate = 30;
+        else if (vehicleAge <= 5) depreciationRate = 40;
+        else if (vehicleAge <= 6) depreciationRate = 50;
+        else if (vehicleAge <= 7) depreciationRate = 60;
+        else depreciationRate = 70;
+
+        // Calculate custom value
+        const customValue = Math.max((crsp / 1.25 / 1.25 / 1.2 / 1.16), invoiceValue);
+
+        // Determine Excise Duty Rate based on Engine Capacity
+        const exciseDutyRate = engineCapacity <= 1500 ? 0.2 : 0.25;
+
+        // Calculate taxes
+        const importDuty = customValue * 0.25;
+        const exciseDuty = (customValue + importDuty) * exciseDutyRate;
+        const vat = (customValue + importDuty + exciseDuty) * 0.16;
+        const rdl = customValue * 0.02;
+        const idf = customValue * 0.01;
+        const totalTax = importDuty + exciseDuty + vat + rdl + idf;
+        const totalValue = customValue + totalTax;
+
+        // Display results
+        document.getElementById('vehicleAge').textContent = vehicleAge.toFixed(2);
+        document.getElementById('depreciation').textContent = depreciationRate.toFixed(0);
+        document.getElementById('customValue').textContent = customValue.toFixed(2);
+        document.getElementById('importDuty').textContent = importDuty.toFixed(2);
+        document.getElementById('exciseDuty').textContent = exciseDuty.toFixed(2);
+        document.getElementById('vat').textContent = vat.toFixed(2);
+        document.getElementById('rdl').textContent = rdl.toFixed(2);
+        document.getElementById('idf').textContent = idf.toFixed(2);
+        document.getElementById('totalTax').textContent = totalTax.toFixed(2);
+        document.getElementById('totalValue').textContent = totalValue.toFixed(2);
+
+        document.getElementById('result').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
